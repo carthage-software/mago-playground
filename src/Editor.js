@@ -92,8 +92,26 @@ function useEditorErrorDecorator(code, issues)
     return {markEditorAsInitialized};
 }
 
+function useTheme() {
+    const availableThemes = {
+        light: 'vs-light',
+        dark: 'vs-dark',
+    }
+    const selectTheme = (isLight) => isLight ? availableThemes.light : availableThemes.dark;
+    const [theme, setTheme] = useState(
+        selectTheme(window.matchMedia('(prefers-color-scheme: light)').matches)
+    );
+
+    window.matchMedia('(prefers-color-scheme: light)').addEventListener('change', event => {
+        setTheme(selectTheme(event.matches));
+    });
+
+    return theme;
+}
+
 export function Editor({code, setCode, issues}) {
     const {markEditorAsInitialized} = useEditorErrorDecorator(code, issues);
+    const theme = useTheme();
 
     return (
         <CodeEditor
@@ -105,6 +123,7 @@ export function Editor({code, setCode, issues}) {
             }}
             options={{
                 minimap: {enabled: false},
+                theme,
             }}
             style={{
                 backgroundColor: "transparent",
@@ -118,6 +137,8 @@ export function Editor({code, setCode, issues}) {
 }
 
 export function ReadonlyEditor({code}) {
+    const theme = useTheme();
+
     return (
         <CodeEditor
             value={code}
@@ -125,6 +146,7 @@ export function ReadonlyEditor({code}) {
             options={{
                 minimap: {enabled: false},
                 readOnly: true,
+                theme,
             }}
             style={{
                 backgroundColor: "transparent",
