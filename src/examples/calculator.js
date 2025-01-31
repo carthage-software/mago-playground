@@ -1,6 +1,8 @@
 export const name = "Calculator";
 export const content = `<?php
 
+declare(strict_types=2);
+
 namespace App;
 
 class Calculator

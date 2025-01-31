@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, {useState, useEffect} from "react";
 import decamelize from "decamelize";
 import {
   FiSettings,
@@ -8,16 +8,14 @@ import {
   FiSquare,
   FiChevronDown,
   FiChevronLeft,
-  FiSun,
-  FiMoon,
   FiGithub,
 } from "react-icons/fi";
-import CodeEditor from "@uiw/react-textarea-code-editor";
 import lzstring from "lz-string";
 import examples from "./examples";
 import { getLinterDefinitions, performAnalysis } from "./services/linter";
-
 import "./App.css";
+import {Editor, ReadonlyEditor} from "./Editor";
+import {useDebouncedCallback} from "@react-hookz/web";
 
 export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
@@ -27,7 +25,7 @@ export default function App() {
   const [hasFormattingError, setHasFormattingError] = useState(false);
   const [selectedExample, setSelectedExample] = useState("");
   const [plugins, setPlugins] = useState([]);
-  const [issues, setIssues] = useState([]);
+  const [issues, setIssues] = useState({parse: [], semantics: [], lint: []});
 
   useEffect(() => {
     analyzeCode(code);
@@ -117,6 +115,8 @@ export default function App() {
       window.location.hash = '#code/' + lzstring.compressToEncodedURIComponent(input);
     }
   };
+
+  const submitCodeAnalysisWhilstTyping = useDebouncedCallback(analyzeCode, [analyzeCode], 250);
 
   const loadCode = (code) => {
     setCode(code);
@@ -354,19 +354,13 @@ export default function App() {
           <div className="editor-section">
             <div className="editor-header">PHP Code</div>
             <div className="editor-wrapper">
-              <CodeEditor
-                value={code}
-                language="php"
-                placeholder="Enter PHP code here..."
-                onChange={(evn) => {
-                  setCode(evn.target.value);
+              <Editor
+                code={code}
+                setCode={(code) => {
+                  setCode(code);
+                  submitCodeAnalysisWhilstTyping(code);
                 }}
-                style={{
-                  backgroundColor: "transparent",
-                  fontFamily: "Fira Code, monospace",
-                  fontSize: 14,
-                }}
-                padding={16}
+                issues={issues}
               />
             </div>
           </div>
@@ -384,17 +378,7 @@ export default function App() {
                   errors.
                 </div>
               ) : (
-                <CodeEditor
-                  value={formattedCode}
-                  language="php"
-                  readOnly
-                  style={{
-                    backgroundColor: "transparent",
-                    fontFamily: "Fira Code, monospace",
-                    fontSize: 14,
-                  }}
-                  padding={16}
-                />
+                <ReadonlyEditor code={formattedCode} />
               )}
             </div>
           </div>
