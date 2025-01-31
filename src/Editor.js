@@ -109,6 +109,21 @@ function useTheme() {
     return theme;
 }
 
+function useResize(resizeDeps)
+{
+    const [initialized, setInitialized] = useState(false);
+    const editor = useRef();
+
+    useEffect(() => {
+        if (initialized && editor.current) {
+            editor.current.layout({});
+        }
+        setInitialized(true);
+    }, resizeDeps);
+
+    return editor;
+}
+
 export function Editor({code, setCode, issues}) {
     const {markEditorAsInitialized} = useEditorErrorDecorator(code, issues);
     const theme = useTheme();
@@ -136,8 +151,9 @@ export function Editor({code, setCode, issues}) {
     );
 }
 
-export function ReadonlyEditor({code}) {
+export function ReadonlyEditor({code, resizeDeps}) {
     const theme = useTheme();
+    const ref = useResize(resizeDeps)
 
     return (
         <CodeEditor
@@ -154,6 +170,7 @@ export function ReadonlyEditor({code}) {
                 fontSize: 14,
             }}
             padding={16}
+            onMount={(editor) => {ref.current = editor}}
         />
     );
 }

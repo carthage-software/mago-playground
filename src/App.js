@@ -378,7 +378,7 @@ export default function App() {
                   errors.
                 </div>
               ) : (
-                <ReadonlyEditor code={formattedCode} />
+                <ReadonlyEditor code={formattedCode} resizeDeps={[isSettingsOpen]} />
               )}
             </div>
           </div>
