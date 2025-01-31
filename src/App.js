@@ -13,6 +13,7 @@ import {
   FiGithub,
 } from "react-icons/fi";
 import CodeEditor from "@uiw/react-textarea-code-editor";
+import lzstring from "lz-string";
 import examples from "./examples";
 import { getLinterDefinitions, performAnalysis } from "./services/linter";
 
@@ -51,6 +52,22 @@ export default function App() {
   }, []);
 
   useEffect(() => {
+    if (location.hash.startsWith('#code')) {
+      const code = location.hash.replace('#code/', '').trim()
+      let userCode = lzstring.decompressFromEncodedURIComponent(code) || lzstring.decompressFromEncodedURIComponent(decodeURIComponent(code));
+
+      loadCode(userCode);
+
+      return;
+    }
+
+    if (location.hash.startsWith('#example')) {
+        const exampleKey = location.hash.replace('#example/', '').trim()
+        handleExampleSelect(exampleKey);
+
+        return;
+    }
+
     if (Object.keys(examples).length > 0) {
       handleExampleSelect(Object.keys(examples)[0]);
     }
@@ -88,13 +105,31 @@ export default function App() {
 
     setFormattedCode(analysis.formatted || "");
     setHasFormattingError(hasParseError);
+
+    if (input) {
+      for(const exampleName in examples) {
+        if (examples[exampleName].content === input) {
+          window.location.hash = '#example/' + exampleName;
+          return;
+        }
+      }
+
+      window.location.hash = '#code/' + lzstring.compressToEncodedURIComponent(input);
+    }
   };
+
+  const loadCode = (code) => {
+    setCode(code);
+    analyzeCode(code);
+  }
 
   const handleExampleSelect = (exampleKey) => {
     const example = examples[exampleKey];
-    setCode(example.content);
-    setSelectedExample(exampleKey);
-    analyzeCode(example.content);
+    if (example) {
+      loadCode(example.content);
+      setSelectedExample(exampleKey);
+      window.location.hash = '#example/' + exampleKey;
+    }
   };
 
   const togglePlugin = (pluginName) => {
