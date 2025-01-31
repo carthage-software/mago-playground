@@ -121,6 +121,12 @@ function useResize(resizeDeps)
         setInitialized(true);
     }, resizeDeps);
 
+    window.onresize = () => {
+        if (initialized && editor.current) {
+            editor.current.layout({});
+        }
+    }
+
     return editor;
 }
 
