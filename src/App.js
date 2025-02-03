@@ -1,25 +1,23 @@
 import React, {useState, useEffect} from "react";
-import decamelize from "decamelize";
 import {
   FiSettings,
   FiCode,
-  FiX,
-  FiCheckSquare,
-  FiSquare,
-  FiChevronDown,
-  FiChevronLeft,
   FiGithub,
 } from "react-icons/fi";
 import lzstring from "lz-string";
 import examples from "./examples";
-import { getLinterDefinitions, performAnalysis } from "./services/linter";
+import { performAnalysis } from "./services/linter";
 import "./App.css";
 import {Editor, ReadonlyEditor} from "./Editor";
 import {useDebouncedCallback} from "@react-hookz/web";
+import Issues from "./Issues";
+import Settings from "./Settings";
+import {grabHash, replaceHash} from "./services/url";
+import {defaultPhpVersion} from "./PhpVersion";
 
 export default function App() {
   const [isSettingsOpen, setIsSettingsOpen] = useState(false);
-  const [phpVersion, setPhpVersion] = useState("8.4");
+  const [phpVersion, setPhpVersion] = useState(defaultPhpVersion);
   const [code, setCode] = useState("");
   const [formattedCode, setFormattedCode] = useState("");
   const [hasFormattingError, setHasFormattingError] = useState(false);
@@ -32,26 +30,8 @@ export default function App() {
   }, [phpVersion, plugins]);
 
   useEffect(() => {
-    const toSlug = (str) =>
-      decamelize(str, { separator: "-" }).replace(/ /g, "-");
-    const pluginDefs = getLinterDefinitions().map(([plugin, rules]) => ({
-      name: plugin.name,
-      slug: toSlug(plugin.name),
-      enabled: plugin.enabled_by_default,
-      expanded: false,
-      rules: rules.map((rule) => ({
-        name: rule.name,
-        slug: `${toSlug(plugin.name)}/${toSlug(rule.name)}`,
-        enabled: rule.level !== undefined,
-        level: rule.level,
-      })),
-    }));
-    setPlugins(pluginDefs);
-  }, []);
-
-  useEffect(() => {
-    if (location.hash.startsWith('#code')) {
-      const code = location.hash.replace('#code/', '').trim()
+    if (grabHash().startsWith('#code')) {
+      const code = grabHash().replace('#code/', '').trim()
       let userCode = lzstring.decompressFromEncodedURIComponent(code) || lzstring.decompressFromEncodedURIComponent(decodeURIComponent(code));
 
       loadCode(userCode);
@@ -59,8 +39,8 @@ export default function App() {
       return;
     }
 
-    if (location.hash.startsWith('#example')) {
-        const exampleKey = location.hash.replace('#example/', '').trim()
+    if (grabHash().startsWith('#example')) {
+        const exampleKey = grabHash().replace('#example/', '').trim()
         handleExampleSelect(exampleKey);
 
         return;
@@ -107,12 +87,12 @@ export default function App() {
     if (input) {
       for(const exampleName in examples) {
         if (examples[exampleName].content === input) {
-          window.location.hash = '#example/' + exampleName;
+          replaceHash('example/' + exampleName);
           return;
         }
       }
 
-      window.location.hash = '#code/' + lzstring.compressToEncodedURIComponent(input);
+      replaceHash('code/' + lzstring.compressToEncodedURIComponent(input));
     }
   };
 
@@ -128,179 +108,18 @@ export default function App() {
     if (example) {
       loadCode(example.content);
       setSelectedExample(exampleKey);
-      window.location.hash = '#example/' + exampleKey;
+      replaceHash('example/' + exampleKey);
     }
-  };
-
-  const togglePlugin = (pluginName) => {
-    setPlugins((prev) =>
-      prev.map((p) =>
-        p.name === pluginName ? { ...p, enabled: !p.enabled } : p,
-      ),
-    );
-  };
-
-  const togglePluginExpand = (pluginName) => {
-    setPlugins((prev) =>
-      prev.map((p) =>
-        p.name === pluginName ? { ...p, expanded: !p.expanded } : p,
-      ),
-    );
-  };
-
-  const toggleRule = (pluginName, ruleName) => {
-    setPlugins((prev) =>
-      prev.map((p) =>
-        p.name === pluginName
-          ? {
-              ...p,
-              rules: p.rules.map((r) =>
-                r.name === ruleName ? { ...r, enabled: !r.enabled } : r,
-              ),
-            }
-          : p,
-      ),
-    );
-  };
-
-  const renderSettingsPanel = () => {
-    return (
-      <div className={`settings-panel ${isSettingsOpen ? "open" : ""}`}>
-        <div className="settings-header">
-          <h3>Settings</h3>
-          <FiX
-            className="close-icon"
-            onClick={() => setIsSettingsOpen(false)}
-          />
-        </div>
-
-        {/* PHP Version */}
-        <div className="settings-block">
-          <div className="settings-title">PHP Version</div>
-          <select
-            className="php-version-select"
-            value={phpVersion}
-            onChange={(e) => setPhpVersion(e.target.value)}
-          >
-            {["7.4", "8.0", "8.1", "8.2", "8.3", "8.4"].map((v) => (
-              <option key={v} value={v}>
-                PHP {v}
-              </option>
-            ))}
-          </select>
-        </div>
-
-        {/* Plugins and Rules */}
-        <div className="settings-block">
-          <div className="settings-title">Plugins &amp; Rules</div>
-          {plugins.map((plugin) => (
-            <div key={plugin.name} className="plugin-container">
-              {/* Plugin Header */}
-              <div className="plugin-header">
-                <div
-                  className={`plugin-toggle ${
-                    plugin.enabled ? "enabled" : "disabled"
-                  }`}
-                  onClick={() => togglePlugin(plugin.name)}
-                >
-                  <div className="plugin-name">{plugin.name}</div>
-                  {plugin.enabled ? (
-                    <FiCheckSquare className="plugin-icon check" />
-                  ) : (
-                    <FiSquare className="plugin-icon" />
-                  )}
-                </div>
-                <div
-                  className="plugin-expand"
-                  onClick={() => togglePluginExpand(plugin.name)}
-                >
-                  {plugin.expanded ? <FiChevronDown /> : <FiChevronLeft />}
-                </div>
-              </div>
-              {/* Rules List */}
-              <div
-                className="rule-list"
-                style={{
-                  maxHeight: plugin.expanded ? "500px" : "0px",
-                  transition: "max-height 0.3s ease",
-                }}
-              >
-                {plugin.rules.map((rule) => (
-                  <div
-                    key={rule.name}
-                    className={`rule-item ${
-                      rule.enabled ? "enabled" : "disabled"
-                    }`}
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleRule(plugin.name, rule.name);
-                    }}
-                  >
-                    <div className="rule-name">{rule.name}</div>
-                    {rule.enabled ? (
-                      <FiCheckSquare className="rule-icon check" />
-                    ) : (
-                      <FiSquare className="rule-icon" />
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-    );
-  };
-
-  const renderIssue = (issue, idx) => {
-    const level = issue.level?.toLowerCase?.() || "note";
-    return (
-      <div className={`issue-card level-${level}`} key={idx}>
-        <div className="issue-top">
-          <span className="issue-level">{issue.level}</span>
-          <span className="issue-code">{issue.code}</span>
-        </div>
-        <div className="issue-message">{issue.message}</div>
-        {issue.notes?.length > 0 && (
-          <div className="issue-notes">
-            {issue.notes.map((note, i) => (
-              <div className="issue-note" key={i}>
-                {note}
-              </div>
-            ))}
-          </div>
-        )}
-        {issue.help && <div className="issue-help">{issue.help}</div>}
-        {issue.annotations
-          ?.filter((ann) => ann.message)
-          ?.map((ann, i) => (
-            <div className="issue-annotation" key={i}>
-              [{ann.span.start.offset}-{ann.span.end.offset}]
-              {ann.message ? `: ${ann.message}` : ""}
-            </div>
-          ))}
-      </div>
-    );
-  };
-
-  const renderIssues = () => {
-    if (!issues) return null;
-    const parseIssues = issues.parse ? [issues.parse] : [];
-    const semanticIssues = issues.semantics || [];
-    const lintIssues = issues.lint || [];
-    const allIssues = [...parseIssues, ...semanticIssues, ...lintIssues];
-
-    return (
-      <div className="issues-container">
-        {allIssues.map((issue, i) => renderIssue(issue, i))}
-      </div>
-    );
   };
 
   return (
     <div className={`app-container`}>
-      {renderSettingsPanel()}
-
+      <Settings
+          opened={isSettingsOpen}
+          onPluginsChanged={setPlugins}
+          onPhpVersionChange={setPhpVersion}
+          onClose={() => setIsSettingsOpen(false)}
+      />
       <div className={`main-panel`}>
         <div className="top-bar">
           <div className="top-left">
@@ -384,7 +203,7 @@ export default function App() {
           </div>
         </div>
 
-        {renderIssues()}
+        <Issues issues={issues} />
       </div>
     </div>
   );
