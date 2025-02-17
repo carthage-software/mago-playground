@@ -1,53 +1,46 @@
-name: Fetch Latest Mago WASM
+name: Fetch latest Mago WASM
 
 on:
   schedule:
     - cron: "0 * * * *" # every hour
-  workflow_dispatch: # allows manual trigger if desired
+  workflow_dispatch:
 
 jobs:
   fetch-latest-wasm:
     runs-on: ubuntu-latest
+    concurrency:
+      group: ${{ github.workflow }}-${{ github.ref }}
+      cancel-in-progress: true
+    permissions:
+      contents: write 
 
     steps:
-      - name: Check out this repo
-        uses: actions/checkout@v3
+      - name: Check out the repository
+        uses: actions/checkout@v4
 
-      - name: Set up Node (only necessary if you need Node for anything else)
-        uses: actions/setup-node@v3
+      - name: Set up Node
+        uses: actions/setup-node@v4
         with:
-          node-version: 16
+          node-version: latest
 
-      - name: Install tools needed (e.g. curl, tar)
+      - name: Install curl and tar
         run: sudo apt-get update && sudo apt-get install -y curl tar
 
-      - name: Get latest release info
+      - name: Get latest release
         id: get_release
         run: |
-          # Fetch release JSON
-          RELEASE_JSON=$(curl -s https://api.github.com/repos/carthage-software/mago/releases/latest)
-          echo "RELEASE_JSON=$RELEASE_JSON" >> $GITHUB_OUTPUT
-
-      - name: Parse out version and download URL
-        id: parse_release
-        run: |
-          # Using 'jq' to parse JSON (already installed on GitHub runners).
-          # If not, install it with apt-get above.
-          LATEST_VERSION=$(echo "${{ steps.get_release.outputs.RELEASE_JSON }}" | jq -r '.tag_name')
-          # The artifact name might be "mago-{version}-wasm.tar.gz",
-          # but let's assume we can construct the URL or find the asset in the array of assets.
-          DOWNLOAD_URL=$(echo "${{ steps.get_release.outputs.RELEASE_JSON }}" | jq -r '.assets[] | select(.name | test("wasm.tar.gz$")) | .browser_download_url')
-
-          echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_OUTPUT
-          echo "DOWNLOAD_URL=$DOWNLOAD_URL" >> $GITHUB_OUTPUT
+            RELEASE_JSON=$(curl -s https://api.github.com/repos/carthage-software/mago/releases/latest)
+            LATEST_VERSION=$(echo "$RELEASE_JSON" | jq -r '.tag_name')
+            DOWNLOAD_URL=$(echo "$RELEASE_JSON" | jq -r '.assets[] | select(.name | test("wasm.tar.gz$")) | .browser_download_url')
+            echo "LATEST_VERSION=$LATEST_VERSION" >> $GITHUB_OUTPUT
+            echo "DOWNLOAD_URL=$DOWNLOAD_URL" >> $GITHUB_OUTPUT
 
       - name: Download artifact
         run: |
-          curl -L "${{ steps.parse_release.outputs.DOWNLOAD_URL }}" -o mago-wasm.tar.gz
+          curl -L "${{ steps.get_release.outputs.DOWNLOAD_URL }}" -o mago-wasm.tar.gz
 
       - name: Extract artifact
         run: |
-          # Remove old WASM files if needed, or keep them
           rm -rf src/services/wasm/*
           tar -xzf mago-wasm.tar.gz -C src/services/wasm
 
@@ -59,12 +52,12 @@ jobs:
           # Check if there's anything to commit
           if [ -n "$(git status --porcelain)" ]; then
             git add .
-            git commit -m "Update WASM to version ${{ steps.parse_release.outputs.LATEST_VERSION }}"
+            git commit -m "chore: update WASM to v${{ steps.get_release.outputs.LATEST_VERSION }}"
           else
             echo "No changes to commit"
           fi
 
       - name: Push changes if any
-        if: always()
+        if: success()
         run: |
           git push origin HEAD:${{ github.ref_name }}
