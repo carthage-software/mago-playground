@@ -43,6 +43,7 @@ jobs:
         run: |
           rm -rf src/services/wasm/*
           tar -xzf mago-wasm.tar.gz -C src/services/wasm
+          rm mago-wasm.tar.gz
 
       - name: Check for changes
         run: |
