@@ -1,0 +1,27 @@
+{
+  "name": "mago-wasm",
+  "type": "module",
+  "collaborators": [
+    "Saif Eddin Gmati <azjezz@protonmail.com>"
+  ],
+  "description": "Exposes PHP code analysis and tooling functionalities as WebAssembly modules, enabling browser-based tools and editor integrations.",
+  "version": "0.17.0",
+  "license": "MIT OR Apache-2.0",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/carthage-software/mago"
+  },
+  "files": [
+    "mago_wasm_bg.wasm",
+    "mago_wasm.js",
+    "mago_wasm_bg.js",
+    "mago_wasm.d.ts"
+  ],
+  "main": "mago_wasm.js",
+  "homepage": "https://github.com/carthage-software/mago",
+  "types": "mago_wasm.d.ts",
+  "sideEffects": [
+    "./mago_wasm.js",
+    "./snippets/*"
+  ]
+}
