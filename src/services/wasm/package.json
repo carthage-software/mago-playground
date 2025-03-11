@@ -5,7 +5,7 @@
     "Saif Eddin Gmati <azjezz@protonmail.com>"
   ],
   "description": "Exposes PHP code analysis and tooling functionalities as WebAssembly modules, enabling browser-based tools and editor integrations.",
-  "version": "0.19.4",
+  "version": "0.19.5",
   "license": "MIT OR Apache-2.0",
   "repository": {
     "type": "git",
