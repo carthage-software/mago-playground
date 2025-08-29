@@ -197,31 +197,20 @@ function getStringFromWasm0(ptr, len) {
     return cachedTextDecoder.decode(getUint8ArrayMemory0().subarray(ptr, ptr + len));
 }
 /**
- * Returns an array (serialized to JS via [`JsValue`]) of **all** plugin
- * definitions and their associated rules.
+ * Runs the full analysis pipeline (parse, semantics, lint, analyze, format).
  *
- * Each element in the returned array is a tuple:
- * `(PluginDefinition, Vec<RuleDefinition>)`.
- *
- * # Errors
- *
- * Returns a [`JsValue`] error if the serialization to
- * [`JsValue`] fails (unlikely).
- *
- * # Example (JS Usage)
- * ```js
- * import init, { mago_get_definitions } from 'mago_wasm';
- *
- * await init();
- * const defs = mago_get_definitions();
- * console.log(defs); // An array of plugin/rule definitions
- * ```
+ * Takes a string of PHP code and a settings object, returning a comprehensive
+ * analysis result.
+ * @param {string} code
+ * @param {any} settings
  * @returns {any}
  */
-export function mago_get_definitions() {
+export function run(code, settings) {
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        wasm.mago_get_definitions(retptr);
+        const ptr0 = passStringToWasm0(code, wasm.__wbindgen_export_1, wasm.__wbindgen_export_2);
+        const len0 = WASM_VECTOR_LEN;
+        wasm.run(retptr, ptr0, len0, addHeapObject(settings));
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
         var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
@@ -235,53 +224,16 @@ export function mago_get_definitions() {
 }
 
 /**
- * Performs a full “analysis” of the given `code` string:
- * 1. **Parse** the PHP code and detect any syntax errors.
- * 2. **Lint** the code using the provided linter settings.
- * 3. **Optionally** format the code if `format_settings` is provided.
+ * Returns metadata for all available linter rules.
  *
- * Returns an [`AnalysisResults`] object (serialized to JS), which
- * contains any parse errors, semantic issues, linter issues, and
- * the formatted code (if no syntax errors were encountered).
- *
- * # Arguments
- *
- * * `code` - A string containing the PHP code to analyze.
- * * `format_settings` - A [`JsValue`] representing a
- *   [`FormatSettings`](mago_formatter::settings::FormatSettings)
- *   struct, or `null`/`undefined` to use the default settings.
- * * `linter_settings` - A [`JsValue`] representing a
- *   [`Settings`](mago_linter::settings::Settings) struct, or
- *   `null`/`undefined` to use the default settings (PHP 8.4).
- *
- * # Errors
- *
- * Returns a [`JsValue`] (string) error if deserialization of
- * the provided settings fails, or if parsing/analysis fails.
- *
- * # Example (JS Usage)
- * ```js
- * import init, { mago_analysis } from 'mago_wasm';
- *
- * await init();
- * const code = `<?php echo "Hello World"; ?>`;
- * const formatSettings = { indent_size: 2 };
- * const linterSettings = { php_version: "8.1" };
- *
- * const analysis = mago_analysis(code, formatSettings, linterSettings);
- * console.log(analysis); // { parse_error: null, linter_issues: [...], formatted: "...", etc. }
- * ```
- * @param {string} code
- * @param {any} format_settings
+ * This allows a UI to dynamically display available rules and their descriptions.
  * @param {any} linter_settings
  * @returns {any}
  */
-export function mago_analysis(code, format_settings, linter_settings) {
+export function getRules(linter_settings) {
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        const ptr0 = passStringToWasm0(code, wasm.__wbindgen_export_1, wasm.__wbindgen_export_2);
-        const len0 = WASM_VECTOR_LEN;
-        wasm.mago_analysis(retptr, ptr0, len0, addHeapObject(format_settings), addHeapObject(linter_settings));
+        wasm.getRules(retptr, addHeapObject(linter_settings));
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
         var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
@@ -295,55 +247,39 @@ export function mago_analysis(code, format_settings, linter_settings) {
 }
 
 /**
- * Formats the provided `code` string with the given
- * [`FormatSettings`], returning the resulting string.
+ * Runs only the formatter on the given code.
  *
- * # Arguments
- *
- * * `code` - The PHP code to be formatted.
- * * `format_settings` - A [`JsValue`] representing
- *   a [`FormatSettings`](mago_formatter::settings::FormatSettings)
- *   struct, or `null`/`undefined` to use defaults.
- *
- * # Errors
- *
- * Returns a [`JsValue`] (string) error if the code is invalid
- * (i.e., parse error) or if deserialization of `format_settings` fails.
- *
- * # Example (JS Usage)
- * ```js
- * import init, { mago_format } from 'mago_wasm';
- *
- * await init();
- * const code = `<?php echo "Hello"; ?>`;
- * const fmtSet = { indent_size: 4, max_line_length: 100 };
- *
- * try {
- *   const formatted = mago_format(code, fmtSet);
- *   console.log(formatted);
- * } catch (e) {
- *   console.error("Formatting failed:", e);
- * }
- * ```
+ * This is a lightweight function for callers who only need to format code
+ * without performing a full analysis.
  * @param {string} code
- * @param {any} format_settings
- * @returns {any}
+ * @param {any} php_version
+ * @param {any} settings
+ * @returns {string}
  */
-export function mago_format(code, format_settings) {
+export function formatCode(code, php_version, settings) {
+    let deferred3_0;
+    let deferred3_1;
     try {
         const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
         const ptr0 = passStringToWasm0(code, wasm.__wbindgen_export_1, wasm.__wbindgen_export_2);
         const len0 = WASM_VECTOR_LEN;
-        wasm.mago_format(retptr, ptr0, len0, addHeapObject(format_settings));
+        wasm.formatCode(retptr, ptr0, len0, addHeapObject(php_version), addHeapObject(settings));
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
         var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-        if (r2) {
-            throw takeObject(r1);
+        var r3 = getDataViewMemory0().getInt32(retptr + 4 * 3, true);
+        var ptr2 = r0;
+        var len2 = r1;
+        if (r3) {
+            ptr2 = 0; len2 = 0;
+            throw takeObject(r2);
         }
-        return takeObject(r0);
+        deferred3_0 = ptr2;
+        deferred3_1 = len2;
+        return getStringFromWasm0(ptr2, len2);
     } finally {
         wasm.__wbindgen_add_to_stack_pointer(16);
+        wasm.__wbindgen_export_3(deferred3_0, deferred3_1, 1);
     }
 }
 
@@ -445,11 +381,6 @@ export function __wbg_new_405e22f390576ce2() {
     return addHeapObject(ret);
 };
 
-export function __wbg_new_5e0be73521bc8c17() {
-    const ret = new Map();
-    return addHeapObject(ret);
-};
-
 export function __wbg_new_78feb108b6472713() {
     const ret = new Array();
     return addHeapObject(ret);
@@ -480,11 +411,6 @@ export function __wbg_set_3f1d0b984ed272ed(arg0, arg1, arg2) {
 
 export function __wbg_set_65595bdd868b3009(arg0, arg1, arg2) {
     getObject(arg0).set(getObject(arg1), arg2 >>> 0);
-};
-
-export function __wbg_set_8fc6bf8a5b1071d1(arg0, arg1, arg2) {
-    const ret = getObject(arg0).set(getObject(arg1), getObject(arg2));
-    return addHeapObject(ret);
 };
 
 export function __wbg_value_cd1ffa7b1ab794f1(arg0) {
