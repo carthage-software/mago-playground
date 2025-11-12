@@ -5,7 +5,7 @@
     "Saif Eddin Gmati <azjezz@carthage.software>"
   ],
   "description": "Exposes PHP code analysis and tooling functionalities as WebAssembly modules, enabling browser-based tools and editor integrations.",
-  "version": "1.0.0-beta.34",
+  "version": "1.0.0-rc.1",
   "license": "MIT OR Apache-2.0",
   "repository": {
     "type": "git",
