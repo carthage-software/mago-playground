@@ -208,29 +208,6 @@ function takeObject(idx) {
     return ret;
 }
 /**
- * Returns metadata for all available linter rules.
- *
- * This allows a UI to dynamically display available rules and their descriptions.
- * @param {any} linter_settings
- * @returns {any}
- */
-export function getRules(linter_settings) {
-    try {
-        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
-        wasm.getRules(retptr, addHeapObject(linter_settings));
-        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
-        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
-        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
-        if (r2) {
-            throw takeObject(r1);
-        }
-        return takeObject(r0);
-    } finally {
-        wasm.__wbindgen_add_to_stack_pointer(16);
-    }
-}
-
-/**
  * Runs the full analysis pipeline (parse, semantics, lint, analyze, format).
  *
  * Takes a string of PHP code and an optional settings object, returning a
@@ -245,6 +222,29 @@ export function run(code, settings) {
         const ptr0 = passStringToWasm0(code, wasm.__wbindgen_export, wasm.__wbindgen_export2);
         const len0 = WASM_VECTOR_LEN;
         wasm.run(retptr, ptr0, len0, addHeapObject(settings));
+        var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
+        var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
+        var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
+        if (r2) {
+            throw takeObject(r1);
+        }
+        return takeObject(r0);
+    } finally {
+        wasm.__wbindgen_add_to_stack_pointer(16);
+    }
+}
+
+/**
+ * Returns metadata for all available linter rules.
+ *
+ * This allows a UI to dynamically display available rules and their descriptions.
+ * @param {any} linter_settings
+ * @returns {any}
+ */
+export function getRules(linter_settings) {
+    try {
+        const retptr = wasm.__wbindgen_add_to_stack_pointer(-16);
+        wasm.getRules(retptr, addHeapObject(linter_settings));
         var r0 = getDataViewMemory0().getInt32(retptr + 4 * 0, true);
         var r1 = getDataViewMemory0().getInt32(retptr + 4 * 1, true);
         var r2 = getDataViewMemory0().getInt32(retptr + 4 * 2, true);
