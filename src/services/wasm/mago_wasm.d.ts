@@ -1,12 +1,12 @@
 /* tslint:disable */
 /* eslint-disable */
 /**
- * Runs the full analysis pipeline (parse, semantics, lint, analyze, format).
+ * Runs only the formatter on the given code.
  *
- * Takes a string of PHP code and an optional settings object, returning a
- * comprehensive analysis result.
+ * This is a lightweight function for callers who only need to format code
+ * without performing a full analysis.
  */
-export function run(code: string, settings: any): any;
+export function formatCode(code: string, php_version: any, settings: any): string;
 /**
  * Returns metadata for all available linter rules.
  *
@@ -14,9 +14,9 @@ export function run(code: string, settings: any): any;
  */
 export function getRules(linter_settings: any): any;
 /**
- * Runs only the formatter on the given code.
+ * Runs the full analysis pipeline (parse, semantics, lint, analyze, format).
  *
- * This is a lightweight function for callers who only need to format code
- * without performing a full analysis.
+ * Takes a string of PHP code and an optional settings object, returning a
+ * comprehensive analysis result.
  */
-export function formatCode(code: string, php_version: any, settings: any): string;
+export function run(code: string, settings: any): any;
